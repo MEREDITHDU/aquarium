@@ -1,0 +1,37 @@
+; -----------------------------------------------------------
+
+.MICRO      "ATMEGA16"
+.TOOLCHAIN  "GCC"
+.TARGET     "test.hex"
+.SOURCE     "test.c"
+
+.TRACE              ; Activate micro trace
+
+.CLICKTOOL  "avrdude -p atmega163 -c STK200 -U flash:w:test.hex -U eeprom:w:test.eep"
+
+; ------------------------------------------------------------
+
+.POWER VDD=5 VSS=0  ; Power nodes
+.CLOCK 8meg         ; Micro clock
+.STORE 250m         ; Trace (micro+signals) storage time
+
+; ------------------------------------------------------------
+
+;X1 TTY(19200 8 0 0 1 2) PD0 PD1  ; Place an interactive TTY cell.
+.PLOT V(PD0) V(PD1) V(PD2) V(PD5) V(PD7)
+
+D1 VDD PB7
+D2 VDD PB6
+D3 VDD PB5
+D4 VDD PB4
+
+;D6 VDD PD5
+;D8 VDD PD7
+
+
+
+
+
+
+
+

@@ -1,0 +1,34 @@
+; -----------------------------------------------------------
+
+.MICRO      "ATMEGA16"
+.TOOLCHAIN  "GCC"
+.TARGET     "testlcd.hex"
+.SOURCE     "testlcd.c"
+
+.TRACE              ; Activate micro trace
+
+; ------------------------------------------------------------
+
+.POWER VDD=5 VSS=0  ; Power nodes
+.CLOCK 8meg         ; Micro clock
+.STORE 250m         ; Trace (micro+signals) storage time
+
+; ------------------------------------------------------------
+
+X1 TTY(19200 8 0 0 1 2) PD0 PD1  ; Place an interactive TTY cell.
+.PLOT V(PD0) V(PD1)
+
+
+; LCD cell
+; Parameters are: (characters, lines, oscillator frequency)
+;
+; In the software, it is used the 4 bits interface, to save ports
+; but LCD has 8 bus lines, therefore, the 4 LSB must be connedted to
+; dummy nodes
+;
+;                                                    not connect,
+;                 RS   R/W   E   4 bits interface  arbitrary nodes
+;                 ---  ---  ---  ----------------  ---------------
+X2 LCD(16 2 250K) PB2  VSS  PB3  PB7 PB6 PB5 PB4   nc3 nc2 nc1 nc0
+
+
