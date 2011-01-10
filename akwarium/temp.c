@@ -1,138 +1,151 @@
-#include "config.h"
 #include "temp.h"
 
-void therm_delay(uint16_t delay)
-{
+
+void temp_input_mode()  { TEMP_DDR  &= ~(1 << temp_selected_dq); }
+void temp_output_mode() { TEMP_DDR  |=  (1 << temp_selected_dq); }
+void temp_low_state()   { TEMP_PORT &= ~(1 << temp_selected_dq); }
+void temp_high_state()  { TEMP_PORT |=  (1 << temp_selected_dq); }
+/*
+#define TEMP_INPUT_MODE() TEMP_DDR&=~(1<<temp_selected_dq)
+#define TEMP_OUTPUT_MODE() TEMP_DDR|=(1<<temp_selected_dq)
+#define TEMP_LOW() TEMP_PORT&=~(1<<temp_selected_dq)
+#define TEMP_HIGH() TEMP_PORT|=(1<<temp_selected_dq)
+*/
+
+void temp_set_device(int8_t devicenum) {
+	switch(devicenum) {
+		case 1: temp_selected_dq = TEMP1; break;
+		case 2: temp_selected_dq = TEMP2; break;
+		case 3: temp_selected_dq = TEMP3; break;
+	}
+}
+
+void temp_delay(uint16_t delay) {
 	while(delay--) asm volatile("nop");
 }
 
-
-uint8_t therm_reset()
-{
+uint8_t temp_reset() {
 	uint8_t i;
 	//Pull line low and wait for 480uS
-	THERM_LOW();
-	THERM_OUTPUT_MODE();
-	therm_delay(us(480));
+	temp_low_state();
+	temp_output_mode();
+	temp_delay(us(480));
 	//Release line and wait for 60uS
-	THERM_INPUT_MODE();
-	therm_delay(us(60));
+	temp_input_mode();
+	temp_delay(us(60));
 	//Store line value and wait until the completion of 480uS period
-	i=(THERM_PIN & (1<<THERM_DQ));
-	therm_delay(us(420));
+	i=(TEMP_PIN & (1<<temp_selected_dq));
+	temp_delay(us(420));
 	//Return the value read from the presence pulse (0=OK, 1=WRONG)
 	return i;
 }
 
-void therm_write_bit(uint8_t bit)
-{
+void temp_write_bit(uint8_t bit) {
 	//Pull line low for 1uS
-	THERM_LOW();
-	THERM_OUTPUT_MODE();
-	therm_delay(us(1));
+	temp_low_state();
+	temp_output_mode();
+	temp_delay(us(1));
 	//If we want to write 1, release the line (if not will keep low)
-	if(bit) THERM_INPUT_MODE();
+	if(bit) temp_input_mode();
 	//Wait for 60uS and release the line
-	therm_delay(us(60));
-	THERM_INPUT_MODE();
+	temp_delay(us(60));
+	temp_input_mode();
 }
 
-uint8_t therm_read_bit(void)
-{
+uint8_t temp_read_bit(void) {
 	uint8_t bit=0;
 	//Pull line low for 1uS
-	THERM_LOW();
-	THERM_OUTPUT_MODE();
-	therm_delay(us(1));
+	temp_low_state();
+	temp_output_mode();
+	temp_delay(us(1));
 	//Release line and wait for 14uS
-	THERM_INPUT_MODE();
-	therm_delay(us(14));
+	temp_input_mode();
+	temp_delay(us(14));
 	//Read line value
-	if(THERM_PIN&(1<<THERM_DQ)) bit=1;
+	if(TEMP_PIN&(1<<temp_selected_dq)) bit=1;
 	//Wait for 45uS to end and return read value
-	therm_delay(us(45));
+	temp_delay(us(45));
 	return bit;
 }
 
-uint8_t therm_read_byte(void)
-{
+uint8_t temp_read_byte(void) {
 	uint8_t i=8, n=0;
-	while(i--)
-	{
+	while(i--) {
 		//Shift one position right and store read value
 		n>>=1;
-		n|=(therm_read_bit()<<7);
+		n|=(temp_read_bit()<<7);
 	}
 	return n;
 }
 
-void therm_write_byte(uint8_t byte)
-{
+void temp_write_byte(uint8_t byte) {
 	uint8_t i=8;
 	while(i--)
 	{
 		//Write actual bit and shift one position right to make the next bit ready
-		therm_write_bit(byte&1);
+		temp_write_bit(byte&1);
 		byte>>=1;
 	}
 }
 
-void therm_read_temperature(char *buffer)
-{
+void temp_read(int8_t device, char *buffer) {
+	temp_set_device( device );
+
 	// Buffer length must be at least 12bytes long! ["+XXX.XXXX C"]
 	uint8_t temperature[2];
 	int8_t digit;
 	uint16_t decimal;
 	//Reset, skip ROM and start temperature conversion
-	therm_reset();
-	therm_write_byte(THERM_CMD_SKIPROM);
-	therm_write_byte(THERM_CMD_CONVERTTEMP);
+	temp_reset();
+	temp_write_byte(TEMP_CMD_SKIPROM);
+	temp_write_byte(TEMP_CMD_CONVERTTEMP);
 	//Wait until conversion is complete
-	while(!therm_read_bit());
+	while(!temp_read_bit()) ;//usb_keepalive();
 	//Reset, skip ROM and send command to read Scratchpad
-	therm_reset();
-	therm_write_byte(THERM_CMD_SKIPROM);
-	therm_write_byte(THERM_CMD_RSCRATCHPAD);
+	temp_reset();
+	temp_write_byte(TEMP_CMD_SKIPROM);
+	temp_write_byte(TEMP_CMD_RSCRATCHPAD);
 	//Read Scratchpad (only 2 first bytes)
-	temperature[0]=therm_read_byte();
-	temperature[1]=therm_read_byte();
-	therm_reset();
+	temperature[0]=temp_read_byte();
+	temperature[1]=temp_read_byte();
+	temp_reset();
 	//Store temperature integer digits and decimal digits
 	digit=temperature[0]>>4;
 	digit|=(temperature[1]&0x7)<<4;
 	//Store decimal digits
 	decimal=temperature[0]&0xf;
-	decimal*=THERM_DECIMAL_STEPS_12BIT;
+	decimal*=TEMP_DECIMAL_STEPS_12BIT;
 	//Format temperature into a string [+XXX.XXXX C]
 	sprintf(buffer, "%+d.%04u C", digit, decimal);
 }
 
-void therm_read_temperature2(int8_t *digi, uint16_t *deci)
-{
+void temp_read2(int8_t device, int8_t *digi, uint16_t *deci) {
+	temp_set_device( device );
+
 	// Buffer length must be at least 12bytes long! ["+XXX.XXXX C"]
 	uint8_t temperature[2];
 	int8_t digit;
 	uint16_t decimal;
 	//Reset, skip ROM and start temperature conversion
-	therm_reset();
-	therm_write_byte(THERM_CMD_SKIPROM);
-	therm_write_byte(THERM_CMD_CONVERTTEMP);
+	temp_reset();
+	temp_write_byte(TEMP_CMD_SKIPROM);
+	temp_write_byte(TEMP_CMD_CONVERTTEMP);
 	//Wait until conversion is complete
-	while(!therm_read_bit());
+	while(!temp_read_bit());
 	//Reset, skip ROM and send command to read Scratchpad
-	therm_reset();
-	therm_write_byte(THERM_CMD_SKIPROM);
-	therm_write_byte(THERM_CMD_RSCRATCHPAD);
+	temp_reset();
+	temp_write_byte(TEMP_CMD_SKIPROM);
+	temp_write_byte(TEMP_CMD_RSCRATCHPAD);
 	//Read Scratchpad (only 2 first bytes)
-	temperature[0]=therm_read_byte();
-	temperature[1]=therm_read_byte();
-	therm_reset();
+	temperature[0]=temp_read_byte();
+	temperature[1]=temp_read_byte();
+	temp_reset();
 	//Store temperature integer digits and decimal digits
 	digit=temperature[0]>>4;
 	digit|=(temperature[1]&0x7)<<4;
 	//Store decimal digits
 	decimal=temperature[0]&0xf;
-	decimal*=THERM_DECIMAL_STEPS_12BIT;
+	decimal*=TEMP_DECIMAL_STEPS_12BIT;
 	//results
 	*digi = digit;
 	*deci = decimal;

@@ -5,14 +5,25 @@
 
 DEVICE = atmega32
 AVRDUDE = avrdude -c stk500v2 -P avrdoper -p $(DEVICE)
+FCPU = 12000000
 
-CFLAGS = -Wall -Os -I. -L/usr/avr/#-DDEBUG_LEVEL=2
+CFLAGS = -Wall -Os  -I. -Iusb -Iusb/usbdrv -L/usr/avr/#-DDEBUG_LEVEL=2
+COMPILE = avr-gcc $(CFLAGS) -mmcu=$(DEVICE) -DF_CPU=$(FCPU)
 
-COMPILE = avr-gcc $(CFLAGS) -mmcu=$(DEVICE) 
+SRC = main.c \
+	config.c \
+	menu.c \
+	uart.c \
+	servo.c \
+	temp.c \
+	lcd.c \
+	button.c \
+	usb.c \
+	usb/usbdrv/usbdrv.c \
+	usb/usbdrv/usbdrvasm.c 
 
-SRC = main.c uart.c servo.c temp.c lcd.c config.c 
+
 OBJECTS += $(SRC:.c=.o) $(SRCLIB:.c=.o)
-
 
 # symbolic targets:
 all:	clean main.hex
@@ -21,10 +32,12 @@ all:	clean main.hex
 	$(COMPILE) -c $< -o $@
 
 .S.o:
-	$(COMPILE) -c $< -o $@
+	#$(COMPILE) -c $< -o $@
+	$(COMPILE) -x assembler-with-cpp -c $< -o $@
 
 .c.s:
 	$(COMPILE) -S $< -o $@
+
 
 
 # file targets:
@@ -37,6 +50,7 @@ main.hex:	main.bin
 
 clean:
 	rm -f main.hex main.lst main.obj main.cof main.list main.map main.eep.hex main.bin *.o main.s 
+	rm -f usb/*.o usb/usbdrv/*.o 
 
 
 # flash
@@ -44,10 +58,12 @@ flash:	all
 	$(AVRDUDE) -U flash:w:main.hex:i 
 	
 fuse_int:
-	$(AVRDUDE) -U lfuse:w:0xe4:m -U hfuse:w:0xd9:m
+	#$(AVRDUDE) -U lfuse:w:0xe4:m -U hfuse:w:0xd9:m
+	$(AVRDUDE) -U lfuse:w:0xe4:m -U hfuse:w:0xd1:m
 
 fuse_ext:
-	$(AVRDUDE) -U lfuse:w:0xdd:m -U hfuse:w:0xd9:m
+	$(AVRDUDE) -U lfuse:w:0xdd:m -U hfuse:w:0xd1:m #eeprom save
+	#$(AVRDUDE) -U lfuse:w:0xdd:m -U hfuse:w:0xd9:m
 
 
 

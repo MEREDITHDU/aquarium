@@ -3,8 +3,7 @@
 
 // procedura zapisu bajtu do wyświetlacza LCD
 // bez rozróżnienia instrukcja/dana
-void write_to_lcd(char x)
-{
+void write_to_lcd(char x) {
 	SET_E; // ustaw na E stan wysoki
 	LCD = ((LCD & 0xF0) | ((x & 0xF0) >> 4)); // zapis pierwszej połówki bajtu
 	_delay_ms(1);
@@ -19,22 +18,19 @@ void write_to_lcd(char x)
 }
 
 // procedura zapisu instrukcji do wyświetlacza LCD
-void write_command(char x)
-{
+void write_command(char x) {
 	CLR_RS; // niski stan na RS -> zapis instrukcji
 	write_to_lcd(x); // zapis do LCD
 }
 
 // procedura zapisu danej do wyświetlacza LCD
-void write_char(char x)
-{
+void write_char(char x) {
 	SET_RS; // wysoki stan na RS -> zapis danej
 	write_to_lcd(x); // zapis do LCD
 }
 
 // procedura zapisu tekstu do wyświetlacza LCD
-void write_text(char * s)
-{
+void write_text(char * s) {
 	while(*s) // do napotkania 0
 	{
 		write_char(*s); // zapisz znak wskazywany przez s na LCD
@@ -42,11 +38,10 @@ void write_text(char * s)
 	}
 }
 
-
 void lcd_init(void)
 {
-	DDRC = 0x3F; 
-	PORTC = 0x3F;
+	LCD_DDR  = 0x3F; 
+	LCD_PORT = 0x3F;
 
 	_delay_ms(15); // czekaj 15ms na ustabilizowanie się napięcia zasilającego
 	
@@ -54,13 +49,11 @@ void lcd_init(void)
 	CLR_RS;
 	
 	SET_E;	
-	//LCD = (LCD & 0x30)|(0x03 & 0x0f);  
 	LCD |= ( 0x30 );  
 	_delay_ms(1); 
 	CLR_E; 
 
 	_delay_ms(10);
-
 
 	write_command(0x38); 
 	write_command(0x06); 
@@ -72,6 +65,20 @@ void lcd_init(void)
 	write_command(0x01);
 	write_command(0x0C);
 
+	//lcd baclight
+	LCD_DDR  |= _BV(LCD_BACKLIGHT); 
+	LCD_PORT |= _BV(LCD_BACKLIGHT); 
+}
+
+void lcd_write(int line, char* text) {
+	switch(line) {
+		case 1: write_command(LINE1); break;
+		case 2: write_command(LINE2); break;
+		case 3: write_command(LINE3); break;
+		case 4: write_command(LINE4); break;
+	}
+
+	write_text(text);
 }
 
 

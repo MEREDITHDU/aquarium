@@ -3,8 +3,7 @@
 
 #include "uart.h"
 
-unsigned char receiveByte( void )
-{
+unsigned char uart_receiveByte( void ) {
 	unsigned char data, status;
 	while(!(UCSRA & (1<<RXC))); 	// Wait for incomming data
 	
@@ -14,13 +13,12 @@ unsigned char receiveByte( void )
 	return(data);
 }
 
-void transmitByte( unsigned char data )
-{
+void uart_sendByte( unsigned char data ) {
 	while ( !(UCSRA & (1<<UDRE)) ) ;        /* Wait for empty transmit buffer */
 	UDR = data; 			        /* Start transmition */
 }
 
-void transmitHex( unsigned char dataType, unsigned long data )
+void uart_sendHex( unsigned char dataType, unsigned long data )
 {
 	unsigned char count, i, temp;
 	char dataString[] = "0x        ";
@@ -38,19 +36,20 @@ void transmitHex( unsigned char dataType, unsigned long data )
 		data = data/16;
 	}
 
-	transmitString (dataString);
+	uart_send(dataString);
 }
 
-void transmitString_F(char* string)
+/*
+void uart_sendString_F(char* string)
 {
 	while (pgm_read_byte(&(*string)))
 		transmitByte(pgm_read_byte(&(*string++)));
 	TX_NL;
 }
+*/
 
-void transmitString(char* string)
-{
+void uart_send(char* string) {
 	while (*string)
-		transmitByte(*string++);
+		uart_sendByte(*string++);
 }
 
