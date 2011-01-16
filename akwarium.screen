@@ -1,0 +1,20 @@
+bind 'W' windowlist
+
+bindkey ^[[1;3D prev   
+bindkey ^[[1;3C next  
+
+defscrollback 5000
+defutf8 on
+defencoding utf8
+autodetach on
+startup_message off
+termcapinfo xterm* OL=100
+caption always '%{= dd}%-w[%n %t]%+w %=%H'
+
+# setup some screens
+screen -t avr 		0 bash -c 'vim +Project'
+screen -t avr-make 	1 bash -c 'cd /add/projekty/avr/akwarium && bash'
+screen -t minicom 	2 bash -c 'sudo minicom -m'
+screen -t python 	3 bash -c 'vim +Project'
+screen -t python-run 	4 bash -c 'cd /add/projekty/avr/akwarium_py && bash'
+
