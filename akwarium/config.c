@@ -1,7 +1,7 @@
 
 #include "config.h"
 
-void init() {
+void config_init() {
 
 	//Obsluga INT0, INT1, T0, T1 
 	/*

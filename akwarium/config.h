@@ -10,6 +10,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <util/delay.h> 
 #include <util/twi.h> 
@@ -79,6 +80,6 @@
 
 
 /* Start configuration */
-void init();
+void config_init();
 
 #endif 

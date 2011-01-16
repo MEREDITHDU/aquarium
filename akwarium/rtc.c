@@ -1,29 +1,7 @@
-//
-//wszystkie funkcje s¹ typu 'return int'
-//b8-b15 s¹ bitami b³êdu, 0 - brak b³êdu, inna wartoœæ - kod b³êdu wg. TWI
-//b0-b7  zwraca wartoœæ funkcji, jeœli jest wymagana
-//
 
-#include <util/twi.h>
+#include "rtc.h"
 
-#define SLA_W 0xa2
-#define SLA_R 0xa3
-
-#define PCF_ST_CNT_FL _BV(7)
-#define PCF_ERR_MSK 0xff00
-
-#define PCF_CTRL 0x00
-#define PCF_MILI 0x01
-#define PCF_SEC 0x02
-#define PCF_MIN 0x03
-#define PCF_HOUR 0x04
-#define PCF_DAY 0x05
-#define PCF_YEAR 0x05
-#define PCF_MONTH 0x06
-#define PCF_YEAR_BCD 0x10
-
-unsigned int PCF_Write(unsigned char adr, unsigned char dat)
-{
+unsigned int PCF_Write(unsigned char adr, unsigned char dat) {
         TWCR = (1<<TWINT) | (1<<TWSTA) | (1<<TWEN);
 	while (!(TWCR & (1<<TWINT)));
 	if ((TWSR & 0xf8) != TW_START)
@@ -55,9 +33,8 @@ unsigned int PCF_Write(unsigned char adr, unsigned char dat)
 	return 0;
 }
 
-unsigned int PCF_Read(unsigned char adr)
-{
-unsigned int a = 0;
+unsigned int PCF_Read(unsigned char adr) {
+	unsigned int a = 0;
         TWCR = (1<<TWINT) | (1<<TWSTA) | (1<<TWEN);
 	while (!(TWCR & (1<<TWINT)));
 	if ((TWSR & 0xf8) != TW_START)
@@ -102,73 +79,64 @@ unsigned int a = 0;
 	return a;
 }
 
-unsigned int PCF_Start(void)
-{
+unsigned int PCF_Start(void) {
 	return PCF_Write(PCF_CTRL,PCF_Read(PCF_CTRL) & ~PCF_ST_CNT_FL);
 }
 
-unsigned int PCF_Stop(void)
-{
+unsigned int PCF_Stop(void) {
 	return PCF_Write(PCF_CTRL,PCF_Read(PCF_CTRL) | PCF_ST_CNT_FL);
 }
 
-unsigned int PCF_Read_Mili(void)
-{
-unsigned int temp, temp2;
+unsigned int PCF_Read_Mili(void) {
+	unsigned int temp, temp2;
 	temp = PCF_Read(PCF_MILI);
 	temp2 = temp & (PCF_ERR_MSK | 0x0f);
 	temp2 += ((temp&0xf0)>>4)*10;
 	return temp2;
 }
 
-unsigned int PCF_Read_Sec(void)
-{
-unsigned int temp, temp2;
+unsigned int PCF_Read_Sec(void) {
+	unsigned int temp, temp2;
 	temp = PCF_Read(PCF_SEC);
 	temp2 = temp & (PCF_ERR_MSK | 0x0f);
 	temp2 += ((temp&0xf0)>>4)*10;
 	return temp2;
 }
 
-unsigned int PCF_Read_Min(void)
-{
-unsigned int temp, temp2;
+unsigned int PCF_Read_Min(void) {
+	unsigned int temp, temp2;
 	temp = PCF_Read(PCF_MIN);
 	temp2 = temp & (PCF_ERR_MSK | 0x0f);
 	temp2 += ((temp&0xf0)>>4)*10;
 	return temp2;
 }
 
-unsigned int PCF_Read_Hour(void)
-{
-unsigned int temp, temp2;
+unsigned int PCF_Read_Hour(void) {
+	unsigned int temp, temp2;
 	temp = PCF_Read(PCF_HOUR);
 	temp2 = temp & (PCF_ERR_MSK | 0x0f);
 	temp2 += ((temp&0x30)>>4)*10;
 	return temp2;
 }
 
-unsigned int PCF_Read_Day(void)
-{
-unsigned int temp, temp2;
+unsigned int PCF_Read_Day(void) {
+	unsigned int temp, temp2;
 	temp = (PCF_Read(PCF_DAY));
 	temp2 = temp & (PCF_ERR_MSK | 0x0f);
 	temp2 += ((temp&0x30)>>4)*10;
 	return temp2;
 }
 
-unsigned int PCF_Read_Month(void)
-{
-unsigned int temp, temp2;
+unsigned int PCF_Read_Month(void) {
+	unsigned int temp, temp2;
         temp = (PCF_Read(PCF_MONTH));
 	temp2 = temp & (PCF_ERR_MSK | 0x0f);
 	temp2 += ((temp&0x10)>>4)*10;
 	return temp2;
 }
 
-unsigned int PCF_Read_Year(void)
-{
-unsigned int temp, temp2;
+unsigned int PCF_Read_Year(void) {
+	unsigned int temp, temp2;
         temp = PCF_Read(PCF_YEAR_BCD);
         if ((temp & PCF_ERR_MSK) != 0) return temp;
 	temp2 = ((temp & 0xf0)>>4)*1000;
@@ -180,10 +148,9 @@ unsigned int temp, temp2;
 	return temp2;
 }
 
-unsigned int PCF_Set_Mili(unsigned char a)
-{
-unsigned char temp;
-unsigned int err;
+unsigned int PCF_Set_Mili(unsigned char a) {
+	unsigned char temp;
+	unsigned int err;
 	err = PCF_Stop();
 	if (err != 0) return err;
 	temp = ((a/10)<<4)+a-((a/10)*10);
@@ -194,10 +161,9 @@ unsigned int err;
 	return 0;
 }
 
-unsigned int PCF_Set_Sec(unsigned char a)
-{
-unsigned char temp;
-unsigned int err;
+unsigned int PCF_Set_Sec(unsigned char a) {
+	unsigned char temp;
+	unsigned int err;
 	err = PCF_Stop();
 	if (err != 0) return err;
 	temp = ((a/10)<<4)+a-((a/10)*10);
@@ -208,10 +174,9 @@ unsigned int err;
 	return 0;
 }
 
-unsigned int PCF_Set_Min(unsigned char a)
-{
-unsigned char temp;
-unsigned int err;
+unsigned int PCF_Set_Min(unsigned char a) {
+	unsigned char temp;
+	unsigned int err;
 	err = PCF_Stop();
 	if (err != 0) return err;
 	temp = ((a/10)<<4)+a-((a/10)*10);
@@ -222,10 +187,9 @@ unsigned int err;
 	return 0;
 }
 
-unsigned int PCF_Set_Hour(unsigned char a)
-{
-unsigned char temp;
-unsigned int temp2, err;
+unsigned int PCF_Set_Hour(unsigned char a) {
+	unsigned char temp;
+	unsigned int temp2, err;
 	err = PCF_Stop();
 	if (err != 0) return err;
 	temp = ((a/10)<<4)+a-((a/10)*10);
@@ -238,10 +202,9 @@ unsigned int temp2, err;
 	return 0;
 }
 
-unsigned int PCF_Set_Day(unsigned char a)
-{
-unsigned char temp;
-unsigned int temp2, err;
+unsigned int PCF_Set_Day(unsigned char a) {
+	unsigned char temp;
+	unsigned int temp2, err;
 	err = PCF_Stop();
 	if (err != 0) return err;
 	temp = ((a/10)<<4)+a-((a/10)*10);
@@ -254,10 +217,9 @@ unsigned int temp2, err;
 	return 0;
 }
 
-unsigned int PCF_Set_Month(unsigned char a)
-{
-unsigned char temp;
-unsigned int temp2, err;
+unsigned int PCF_Set_Month(unsigned char a) {
+	unsigned char temp;
+	unsigned int temp2, err;
 	err = PCF_Stop();
 	if (err != 0) return err;
 	temp = ((a/10)<<4)+a-((a/10)*10);
@@ -270,10 +232,9 @@ unsigned int temp2, err;
 	return 0;
 }
 
-unsigned int PCF_Set_Year(unsigned int a)
-{
-unsigned char temp;
-unsigned int temp2, err;
+unsigned int PCF_Set_Year(unsigned int a) {
+	unsigned char temp;
+	unsigned int temp2, err;
 	err = PCF_Stop();
 	if (err != 0) return err;
 	temp = (a&3)<<6;

@@ -7,10 +7,13 @@ DEVICE = atmega32
 AVRDUDE = avrdude -c stk500v2 -P avrdoper -p $(DEVICE)
 FCPU = 12000000
 
-CFLAGS = -Wall -Os  -I. -Iusb -Iusb/usbdrv -L/usr/avr/#-DDEBUG_LEVEL=2
+CFLAGS = -Wall -Os  -I. -Iusb -Iusb/usbdrv -L/usr/avr/
+# -Wl,-u,vfprintf -lprintf_flt -lm #full printf with float
+#-DDEBUG_LEVEL=2
 COMPILE = avr-gcc $(CFLAGS) -mmcu=$(DEVICE) -DF_CPU=$(FCPU)
 
 SRC = main.c \
+	logic.c \
 	config.c \
 	menu.c \
 	uart.c \
@@ -18,6 +21,7 @@ SRC = main.c \
 	temp.c \
 	lcd.c \
 	button.c \
+	rtc.c \
 	usb.c \
 	usb/usbdrv/usbdrv.c \
 	usb/usbdrv/usbdrvasm.c 
@@ -32,7 +36,6 @@ all:	clean main.hex
 	$(COMPILE) -c $< -o $@
 
 .S.o:
-	#$(COMPILE) -c $< -o $@
 	$(COMPILE) -x assembler-with-cpp -c $< -o $@
 
 .c.s:
