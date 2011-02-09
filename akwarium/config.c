@@ -17,7 +17,6 @@ void config_init() {
 	PORTB = 0x00;
 	DDRB =0xFF;
 
-
 	// timer interrupt
 	TCCR1B |= (1 << WGM12); // Ustawia timer w tryb CTC
 	OCR1A = 46875; // Ustawia wartość pożądaną na 1Hz dla preskalera 64

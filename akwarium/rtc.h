@@ -5,6 +5,7 @@
 //
 
 #include <util/twi.h>
+#include <util/delay.h>
 
 #define SLA_W 0xa2
 #define SLA_R 0xa3

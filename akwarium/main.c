@@ -11,23 +11,53 @@ void buttons();
 void main_page();
 
 uint8_t menu_flag = 0, 
-	sec_tick = 0;
+	temp_flag = 0,
+	reset_flag = 0,
+	sec_tick = 0,
+	busy = 0;
+
+tempmeasure_t measure;
+
+
 
 // przerwanie INT0 po przepełnieniu TIMER0 
 ISR(TIMER1_COMPA_vect) { sec_tick = 1; } 
 
 int main(void) {
+	uint8_t c = 0;
 
 	cli(); init(); sei();
+
+	uart_send("Starting .."); UART_NL;
+	lcd_backlight_off();
+
+	//temp_flag = (int*)malloc(sizeof(int));
 
 	/* main event loop */
 	while(1)  {   
 		buttons();
 
+		if(reset_flag) { 
+			//@DEBUG
+			uart_send("reseting"); UART_NL; 
+			while(1); 
+		}
+
 		if(sec_tick) {
 			main_page();
+
+			cli();
+			switch(c++ % 6) {
+				case 0: measure.t1 = gettemp(1);
+				case 2: measure.t2 = gettemp(2);
+				case 4: measure.t2 = gettemp(3);
+			}
+			sei();
+
 			sec_tick = 0;
 		}
+
+			
 
 		usb_keepalive();
 	}
@@ -62,13 +92,18 @@ void buttons() {
 
 void main_page() {
 
+	if(busy) return;
+
 	char* time = timetostr( gettime(), ":" );
 	lcd_write(2, time);
 	free(time);
 
+	char* date = datetostr( getdate(), "/" );
+	lcd_write(1, date);
+	free(date);
 
 	char b[20];
-	uint16_t temp =  gettemp(1);
+	uint16_t temp =  measure.t1;
 	sprintf(b, "%.2d.%.1d", temp/1000, temp%1000);
 	lcd_write(4, b);
 }

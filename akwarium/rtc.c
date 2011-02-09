@@ -37,41 +37,42 @@ unsigned int PCF_Read(unsigned char adr) {
 	unsigned int a = 0;
         TWCR = (1<<TWINT) | (1<<TWSTA) | (1<<TWEN);
 	while (!(TWCR & (1<<TWINT)));
-	if ((TWSR & 0xf8) != TW_START)
-	{
+
+	if ((TWSR & 0xf8) != TW_START) {
 	        return ((TWSR & 0xf8)<<8);
 	}
 	TWDR = SLA_W;
 	TWCR = (1<<TWINT) | (1<<TWEN);
 	while (!(TWCR & (1<<TWINT)));
-	if ((TWSR & 0xf8) != TW_MT_SLA_ACK)
-	{
+
+	if ((TWSR & 0xf8) != TW_MT_SLA_ACK) {
 	        return ((TWSR & 0xf8)<<8);
 	}
 	TWDR = adr;
 	TWCR = (1<<TWINT) | (1<<TWEN);
 	while (!(TWCR & (1<<TWINT)));
-	if ((TWSR & 0xf8) != TW_MT_DATA_ACK)
-	{
+
+	if ((TWSR & 0xf8) != TW_MT_DATA_ACK) {
 	        return ((TWSR & 0xf8)<<8);
 	}
 	TWCR = (1<<TWINT) | (1<<TWSTA) | (1<<TWEN);
 	while (!(TWCR & (1<<TWINT)));
-	if ((TWSR & 0xf8) != TW_REP_START)
-	{
+
+	if ((TWSR & 0xf8) != TW_REP_START) {
 	        return ((TWSR & 0xf8)<<8);
 	}
 	TWDR = SLA_R;
 	TWCR = (1<<TWINT) | (1<<TWEN);
 	while (!(TWCR & (1<<TWINT)));
-	if ((TWSR & 0xf8) != TW_MR_SLA_ACK)
-	{
+
+	if ((TWSR & 0xf8) != TW_MR_SLA_ACK) {
 	        return ((TWSR & 0xf8)<<8);
 	}
 	TWCR = ((1<<TWINT) | (1<<TWEN)) & ~(1<<TWEA);
 	while (!(TWCR & (1<<TWINT)));
-	if ((TWSR & 0xf8) != TW_MR_DATA_NACK)
-	{
+	_delay_ms(10);
+
+	if ((TWSR & 0xf8) != TW_MR_DATA_NACK) {
 	        return ((TWSR & 0xf8)<<8);
 	}
 	a = TWDR;

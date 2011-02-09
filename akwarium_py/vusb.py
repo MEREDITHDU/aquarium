@@ -1,6 +1,6 @@
 #-*- coding: utf8 -*-
 
-import usb
+import usb, time
 
 
 class Vusb:
@@ -28,39 +28,57 @@ class Vusb:
 	def getBufferSize(self):
 		return self.send_cmd(self.CMD_ZERO)
 
-	def send(self, cmd, buffer):
+	def send(self, action, value = 'reset'):
+		c = 0
+		while True:
+			c += 1
+			try: 
+				self._send(action, value)
+				break
+			except Exception, e: 
+				print e
+				time.sleep(0.3)
+				pass
+		print "count: %s" % c
 
+
+	def recv(self, action, param = 0):
+		c = 0
+		while True:
+			c += 1
+			try: 
+				res = self._recv(action, param)
+				print "count: %s" % c
+				return res
+			except Exception, e: 
+				print e
+				time.sleep(0.3)
+				pass
+
+	### PRIVATE ###
+
+	def _send(self, cmd, buffer):
 		val = ''
 		val = self.handle.controlMsg(
 				requestType = self.REQUEST_TYPE | usb.ENDPOINT_OUT, 
 				request = cmd, 
 				value = len(buffer), 
 				buffer = buffer, # self.USB_BUFFER_SIZE
-				timeout = 100
+				timeout = 400
 				)
-
 		return val
 
-	def recv(self, cmd, param):
-
+	def _recv(self, cmd, param):
 		buffer = ''
 		res = self.handle.controlMsg(
 			requestType = self.REQUEST_TYPE | usb.ENDPOINT_IN, 
 			request = cmd, 
 			value = int(param), 
 			buffer = 1000, #"   fds f  1000", # self.USB_BUFFER_SIZE
-			timeout = 100
+			timeout = 400
 			)
-
 		for c in res: buffer += chr(c)
-
 		return buffer
 
-'''
-
-def main():
-	client = VUSB()
-	print client.getBufferSize()
-'''
 
 

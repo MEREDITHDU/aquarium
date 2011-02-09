@@ -19,6 +19,10 @@ typedef struct {
 } time_t;
 
 typedef struct {
+	int day, month, year;
+} date_t;
+
+typedef struct {
 	uint8_t feeding_switch_preoff;
 	uint8_t feeding_switch_poston;
 } config_t;
@@ -36,6 +40,10 @@ typedef struct {
 	uint8_t min, max, switch_id;
 } temperature_t;
 
+typedef struct {
+	uint16_t t1, t2, t3;
+} tempmeasure_t;
+
 /* Common functions */
 void init();
 
@@ -43,6 +51,11 @@ void init();
 void   settime(uint8_t hour, uint8_t min, uint8_t sec);
 time_t gettime();
 char*  timetostr(time_t time, char* separator);
+
+// date
+void   setdate(uint8_t day, uint8_t month, uint8_t year);
+date_t getdate();
+char*  datetostr(date_t date, char* separator);
 
 // temp
 uint16_t gettemp(uint8_t dev);

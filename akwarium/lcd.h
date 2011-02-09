@@ -30,5 +30,10 @@ void write_text(char * s);
 void lcd_write(int device, char * s);
 void lcd_init(void);
 
+void lcd_backlight_on(); 
+void lcd_backlight_fadeon(); 
+void lcd_backlight_off(); 
+void lcd_backlight_fadeoff(); 
+
 
 #endif

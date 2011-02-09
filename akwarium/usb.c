@@ -16,11 +16,21 @@ PROGMEM char usbHidReportDescriptor[22] = {    // USB report descriptor /
 
 /* The following variables store the status of the current data transfer */
 //static uchar    currentAddress;
-uint8_t	usb_bytes_left;
+uint8_t	usb_bytes_left, usb_action;
 char 	usb_buffer[100];
-uint8_t usb_action;
 
-enum { GETTIME = 0, SETTIME, GETTEMP };
+extern uint8_t temp_flag, reset_flag, busy;
+extern tempmeasure_t measure;
+
+enum { GETTIME = 0, 
+	SETTIME, 
+	GETTEMP, 
+	SETDATE, 
+	GETDATE, 
+	RESET, 
+	BACKLIGHT 
+};
+
 
 /*My functions  */
 
@@ -62,18 +72,36 @@ void usbAction(int param) {
 				      settime(time[0], time[1], time[2]);
 				      break;
 			      }
-		case GETTEMP: {
-				      //param is temp device number
-				      int device = param;
-				      double temp = gettemp(device);
+		case GETDATE: {
+				      char *date = datetostr ( getdate(), "/");	
+				      strcpy(usb_buffer, date);
+				      free(date);
 
-				      sprintf(usb_buffer, "%f C", temp);
-				      uart_send(usb_buffer);
 				      usb_bytes_left = strlen(usb_buffer);
 				      break;
 			      }
+		case SETDATE: {
+				      uint8_t date[3], i = 0;
+				      char *p = strtok(usb_buffer, "/");
+				      while(p != NULL) {
+					      date[i++] = atoi(p);
+					      p = strtok(NULL, "/");
+				      }
+				      setdate(date[0], date[1], date[2]);
+				      break;
+			      }
+		case GETTEMP: {
+				      //param is temp device number
+				      int device = param;
+				      uint16_t temp = measure.t1;
+				     
+				      sprintf(usb_buffer, "therm%d: %.2d.%.1d", device, temp/1000, temp%1000);
 
+				      usb_bytes_left = strlen(usb_buffer);
+				      uart_send("\r\nstart: ");
 
+				      break;
+			      }
 	}
 }
 
@@ -84,18 +112,42 @@ usbMsgLen_t usbFunctionSetup(uchar data[8]) {
 	usbRequest_t    *rq = (void *)data;
 	usb_action = rq->bRequest;
 
-	if(usb_action == GETTIME) {
-		usbAction(0);
-		return USB_NO_MSG;
-	}
-	else if(usb_action == SETTIME) {
-		usb_buffer[0] = '\0';
-		usb_bytes_left = rq->wValue.bytes[0];
-		return USB_NO_MSG;
-	}
-	else if(usb_action == GETTEMP) {
-		usbAction(rq->wValue.bytes[0]);
-		return USB_NO_MSG;
+	//@DEBUG
+	/*char b[30];
+	sprintf(&b, "%s: %d", "usbSetup", usb_action);
+	uart_send(b);
+	*/
+
+	switch(usb_action) {
+		case GETTIME: 
+			usbAction(0);
+			return USB_NO_MSG;
+		case SETTIME: 
+			usb_buffer[0] = '\0';
+			usb_bytes_left = rq->wValue.bytes[0];
+			return USB_NO_MSG;
+		case GETDATE: 
+			usbAction(0);
+			return USB_NO_MSG;
+		case SETDATE: 
+			usb_buffer[0] = '\0';
+			usb_bytes_left = rq->wValue.bytes[0];
+			return USB_NO_MSG;
+		case GETTEMP: 
+			usbAction(rq->wValue.bytes[0]);
+			return USB_NO_MSG;
+		case RESET: 
+			reset_flag = 1;
+		        break;
+		case BACKLIGHT: 
+			if( 	 rq->wValue.bytes[0] == 1) lcd_backlight_on();
+			else if( rq->wValue.bytes[0] == 3) lcd_backlight_fadeon();
+			else if( rq->wValue.bytes[0] == 0) lcd_backlight_off();
+			else if( rq->wValue.bytes[0] == 2) lcd_backlight_fadeoff();
+		        break;
+		default:
+			//@DEBUG
+			uart_send("usbFunSetup -> not handled");
 	}
 
 	return 0;
@@ -109,6 +161,7 @@ usbMsgLen_t usbFunctionSetup(uchar data[8]) {
 uchar   usbFunctionRead(uchar *data, uchar len) {
 
 //	uart_send("usb function read"); UART_NL;
+				      uart_send(".");
 	
 	if(len > usb_bytes_left)
 		len = usb_bytes_left;
@@ -145,6 +198,7 @@ uchar   usbFunctionWrite(uchar *data, uchar len) {
 		return 1;               //* end of transfer 
 	}
 
+	//return 0; //* return 1 if this was the last chunk 
 	return 0; //* return 1 if this was the last chunk 
 }
 

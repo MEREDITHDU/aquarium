@@ -81,4 +81,31 @@ void lcd_write(int line, char* text) {
 	write_text(text);
 }
 
+void lcd_backlight_on() {
+	LCD_PORT |= _BV(LCD_BACKLIGHT);	
+}
+void lcd_backlight_fadeon() {
+	int c = 100;
+	while(c--) {
+		lcd_backlight_on();
+		_delay_us(c * 100);
+		lcd_backlight_off();
+		_delay_us(10000 - c * 100);
+	}
+	lcd_backlight_on();
+}
+void lcd_backlight_off() {
+	LCD_PORT &= ~_BV(LCD_BACKLIGHT);	
+}
+void lcd_backlight_fadeoff() {
+	int c = 100;
+	while(c--) {
+		lcd_backlight_off();
+		_delay_us(c * 100);
+		lcd_backlight_on();
+		_delay_us(10000 - c * 100);
+	}
+	lcd_backlight_off();
+}
+
 
